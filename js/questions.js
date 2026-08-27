@@ -1,7 +1,7 @@
 import { genes } from "../data/genes.js";
 import { pathways } from "../data/pathways.js";
 import { curatedQuestions } from "../data/curatedQuestions.js";
-import { cellTypes, interTissueScenarios, organelleFailureScenarios, organelles, organelleById, reporters, traffickingRoutes } from "../data/spatialAtlas.js?v=20260827-5";
+import { cellTypes, interTissueScenarios, organelleFailureScenarios, organelles, organelleById, reporters, traffickingRoutes } from "../data/spatialAtlas.js?v=20260827-6";
 
 export const categoryLabels = {
   geneFunction: "Gene → function",
@@ -86,7 +86,7 @@ function answerText(question) {
 }
 
 function firstSentences(text, count = 2) {
-  return String(text || "").match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.slice(0, count).join(" ").trim() || "";
+  return String(text || "").split(/(?<=[.!?])\s+(?=[A-Z])/).slice(0, count).join(" ").trim();
 }
 
 function plainify(text) {
@@ -104,6 +104,7 @@ function plainify(text) {
     .replaceAll("macromolecules", "large molecules such as proteins and RNA")
     .replaceAll("transcriptional output", "change in gene activity")
     .replaceAll("transcriptionally activates", "helps turn on")
+    .replaceAll("transcription factor", "gene-control protein")
     .replaceAll("transcription", "turning genes on or off")
     .replaceAll("phosphorylates and activates", "adds a phosphate tag that switches on")
     .replaceAll("phosphorylates and inhibits", "adds a phosphate tag that blocks")
@@ -112,10 +113,23 @@ function plainify(text) {
     .replaceAll("luminal hydrolases", "digestive enzymes inside the compartment")
     .replaceAll("proteolysis", "protein breakdown")
     .replaceAll("ubiquitinated substrates", "proteins tagged with ubiquitin")
+    .replaceAll("null lesion", "complete loss-of-function mutation")
+    .replaceAll("downstream", "later")
+    .replaceAll("upstream", "earlier")
+    .replaceAll("functional order", "order of the pathway steps")
+    .replaceAll("universal tissue autonomy", "the gene acting inside every affected tissue")
+    .replaceAll("tissue autonomy", "whether the gene acts inside the affected tissue")
     .replaceAll("cell autonomous", "caused by the gene acting inside that same cell")
     .replaceAll("allele strength", "how strongly the mutation changes the gene")
     .replaceAll("orthogonal strategy", "different kind of test")
     .replaceAll("fate specification", "deciding what kind of cell each cell becomes")
+    .replaceAll("homology search and strand exchange", "finding matching DNA and copying repair information from it")
+    .replaceAll("homologous repair", "DNA repair that uses matching DNA as a template")
+    .replaceAll("cyclin-CDK control", "control of cell-division timing")
+    .replaceAll("cell-cycle progression", "movement through the stages of cell division")
+    .replaceAll("synaptic release", "neurotransmitter release")
+    .replaceAll("UNC-13 priming", "UNC-13 preparing a vesicle for release")
+    .replaceAll("UNC-2 calcium entry", "calcium ions entering through UNC-2")
     .replaceAll("carry out", "help with")
     .replaceAll("Specialized structures include", "Important cell features include");
 }
@@ -130,6 +144,16 @@ const conceptDefinitions = [
   { pattern: /\bbasolateral\b/i, text: "Basolateral means the side and bottom surfaces of a cell." },
   { pattern: /\bligand\b/i, text: "A ligand is a signal molecule that binds to a receiving protein called a receptor." },
   { pattern: /\breceptor\b/i, text: "A receptor is a protein that receives a signal and starts a response in the cell." },
+  { pattern: /\btyrosine kinase\b/i, text: "A kinase is an enzyme that adds a small phosphate tag to another protein and can change its activity." },
+  { pattern: /\bdauer\b/i, text: "Dauer is a tough, long-lived larval stage that the worm enters when conditions are poor." },
+  { pattern: /\bGTPase\b/i, text: "A GTPase is a switch-like protein that changes activity depending on whether it holds GTP or GDP." },
+  { pattern: /\bmitofusin\b/i, text: "A mitofusin helps join the outer membranes of two mitochondria." },
+  { pattern: /\bchromatin\b/i, text: "Chromatin is DNA together with the proteins that package and control it." },
+  { pattern: /\bcyclin\b/i, text: "A cyclin is a timing protein that helps control when a cell moves to the next stage of division." },
+  { pattern: /cyclic-nucleotide-gated channel/i, text: "This is an ion channel that opens when a small internal messenger called a cyclic nucleotide binds to it." },
+  { pattern: /chemosensory transduction/i, text: "Chemosensory transduction means changing a chemical cue, such as an odor, into a nerve signal." },
+  { pattern: /\bmiRNA\b|\bmicroRNA\b/i, text: "A microRNA is a short RNA molecule that lowers the activity of selected genes." },
+  { pattern: /\bheat-shock protein\b/i, text: "A heat-shock protein helps other proteins keep or recover their proper shape during stress." },
   { pattern: /\btranscription factor\b/i, text: "A transcription factor is a protein that helps turn particular genes on or off." },
   { pattern: /\bphosphorylat/i, text: "Phosphorylation means adding a small chemical tag that can change a protein's activity." },
   { pattern: /\breporter\b|::GFP|p::GFP/i, text: "A reporter is a visible experimental signal used as an indirect readout; it does not measure every part of the process." },
@@ -142,7 +166,7 @@ const conceptDefinitions = [
 
 export function buildPlainExplanation(question) {
   if (question.plainExplanation) return question.plainExplanation;
-  const answer = answerText(question);
+  const answer = plainify(answerText(question));
   const detail = sentenceCase(plainify(firstSentences(question.explanation, question.category === "organelleFunction" ? 1 : 2)));
   let explanation;
 
@@ -152,10 +176,14 @@ export function buildPlainExplanation(question) {
       explanation = `The supported answer is ${answer}. ${detail}`;
       break;
     case "geneOrganelle":
-      explanation = `The supported cell location or locations are ${answer}. A cell compartment is a part of the cell with a particular job. ${detail}`;
+      explanation = question.id.startsWith("organelle-genes:")
+        ? `The supported genes are ${answer}. These genes have strong evidence connecting them to the cell compartment named in the question. ${detail}`
+        : `The supported cell location or locations are ${answer}. A cell compartment is a part of the cell with a particular job. ${detail}`;
       break;
     case "geneTissue":
-      explanation = `The supported cells or tissues are ${answer}. This means the gene has been observed or shown to matter there; it does not mean every action of the gene happens only there. ${detail}`;
+      explanation = question.id.startsWith("cell-genes:")
+        ? `The supported genes are ${answer}. They are useful examples connected to the cells or tissue named in the question. ${detail}`
+        : `The supported cells or tissues are ${answer}. This means the gene has been observed or shown to matter there; it does not mean every action of the gene happens only there. ${detail}`;
       break;
     case "organelleFunction":
     case "anatomy":
@@ -186,7 +214,7 @@ export function buildPlainExplanation(question) {
   }
 
   const searchable = `${question.prompt || ""} ${question.explanation || ""} ${answer}`;
-  const definitions = conceptDefinitions.filter((entry) => entry.pattern.test(searchable) && !explanation.includes(entry.text)).slice(0, 2).map((entry) => entry.text);
+  const definitions = question.category === "epistasis" ? [] : conceptDefinitions.filter((entry) => entry.pattern.test(searchable) && !explanation.includes(entry.text)).slice(0, 2).map((entry) => entry.text);
   return `${explanation} ${definitions.join(" ")}`.replace(/\s+/g, " ").trim();
 }
 

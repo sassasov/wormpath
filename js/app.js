@@ -1,6 +1,6 @@
 import { pathways, pathwayDiagrams, references } from "../data/pathways.js";
 import { featuredLearningPathways, learningCollections, learningPortals } from "../data/learning.js";
-import { buildQuestionPool, categoryLabels, getPathwayName, selectNextQuestion } from "./questions.js?v=20260827-5";
+import { buildQuestionPool, categoryLabels, getPathwayName, selectNextQuestion } from "./questions.js?v=20260827-6";
 import { isFullyCorrect, levelForAbility, overallAbilityScore, scoreAnswer, summarizeResponses, updateAbility } from "./scoring.js";
 
 const STORAGE_KEY = "wormpath:assessment:v2";
