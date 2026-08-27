@@ -61,4 +61,4 @@ The content is educational and deliberately distinguishes pathway models from wh
 
 ## GitHub Pages
 
-The repository includes a Pages workflow at `.github/workflows/pages.yml`. In GitHub, choose **Settings → Pages → Build and deployment → Source: GitHub Actions**. A push to `main` runs the engine tests and deploys the static site.
+GitHub Pages publishes directly from the `main` branch at the repository root. The included `.nojekyll` file tells Pages to serve the static files without Jekyll processing. Future pushes to `main` update the public site automatically.
