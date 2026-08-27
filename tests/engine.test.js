@@ -61,6 +61,17 @@ test("function-to-gene prompts never reveal the answer name", () => {
   }
 });
 
+test("post-answer explanations include a plain-language teaching layer", () => {
+  const questions = buildQuestionPool("plain-language");
+  assert.ok(questions.every((question) => question.plainExplanation?.length >= 60));
+  const vulval = questions.find((question) => question.id === "cell-function:vulval_precursor");
+  assert.ok(vulval);
+  assert.match(vulval.plainExplanation, /egg-laying opening/i);
+  assert.match(vulval.plainExplanation, /anchor cell.*growth message/i);
+  assert.match(vulval.plainExplanation, /LET-23 receptors/i);
+  assert.doesNotMatch(vulval.plainExplanation, /anchor-cell EGF/i);
+});
+
 test("20, 50, and 100 question sessions contain no duplicate IDs", () => {
   for (const total of [20, 50, 100]) {
     const session = simulate(total, "correct", `length-${total}`);

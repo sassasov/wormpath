@@ -51,13 +51,14 @@ export const organelles = [
   compartment("sarcomere", "Sarcomere", ["muscle contraction", "force transmission"], ["ordered actomyosin structure"], ["myo-3", "unc-54", "act-1", "unc-15", "unc-22", "unc-89"], ["plasma_membrane", "extracellular_matrix"], ["wormbook-muscle"])
 ];
 
-const cell = (id, name, majorFunctions, specializedStructures, representativeGenes, referenceIds) => ({
+const cell = (id, name, majorFunctions, specializedStructures, representativeGenes, referenceIds, plainExplanation = "") => ({
   id,
   name,
   majorFunctions,
   specializedStructures,
   representativeGenes,
-  referenceIds
+  referenceIds,
+  plainExplanation
 });
 
 export const cellTypes = [
@@ -82,8 +83,8 @@ export const cellTypes = [
   cell("oocyte", "Oocytes", ["meiotic maturation", "maternal provisioning", "yolk uptake"], ["meiotic spindle", "cortical granules"], ["rme-2", "oma-1", "oma-2", "cdk-1"], ["wormbook-germline"]),
   cell("sperm", "Sperm", ["amoeboid motility", "fertilization"], ["major sperm protein cytoskeleton", "membranous organelles"], ["msp-3", "spe-9", "spe-41", "fer-1"], ["wormbook-sperm"]),
   cell("early_embryo", "Early embryonic blastomeres", ["establishing anterior-posterior polarity", "asymmetric cell-fate specification"], ["cortical PAR domains", "mitotic spindles"], ["par-1", "par-2", "par-3", "par-6", "pkc-3", "pie-1"], ["wormbook-polarity"]),
-  cell("vulval_precursor", "Vulval precursor cells", ["interpreting anchor-cell EGF", "forming patterned vulval fates"], ["basolateral LET-23 signaling domains"], ["let-23", "let-60", "mpk-1", "lin-12", "lip-1"], ["wormbook-ras", "wormbook-notch"]),
-  cell("anchor_cell", "Anchor cell", ["inducing vulval development", "invading the basement membrane"], ["invasive membrane", "basement-membrane contact"], ["lin-3", "fos-1", "egl-43", "him-4"], ["wormbook-ras", "wormbook-basement-membranes"]),
+  cell("vulval_precursor", "Vulval precursor cells", ["receiving an EGF growth signal from the nearby anchor cell", "deciding which cells become different parts of the vulva"], ["LET-23 receptors on the sides and bottom of the cells"], ["let-23", "let-60", "mpk-1", "lin-12", "lip-1"], ["wormbook-ras", "wormbook-notch"], "Vulval precursor cells are immature cells that can build the vulva, the worm's egg-laying opening. A nearby organizer cell, called the anchor cell, releases LIN-3, an EGF-like growth message. LET-23 receptors on the precursor cells receive that message and help each cell decide which part of the vulva to become."),
+  cell("anchor_cell", "Anchor cell", ["sending a signal that starts vulval development", "crossing the basement membrane during development"], ["a cell surface that contacts and crosses the basement membrane"], ["lin-3", "fos-1", "egl-43", "him-4"], ["wormbook-ras", "wormbook-basement-membranes"], "The anchor cell is a temporary organizer cell near the future vulva. It releases LIN-3, an EGF-like growth message, to nearby vulval precursor cells. Later, it crosses the thin support layer called the basement membrane so the uterus and vulva can connect."),
   cell("hypodermal_seam", "Lateral epidermal seam", ["heterochronic pattern execution", "cuticle and alae production"], ["junctions with hyp7"], ["lin-29", "nhr-25", "elt-3"], ["wormbook-heterochronic"])
 ];
 

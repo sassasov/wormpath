@@ -1,7 +1,7 @@
 import { genes } from "../data/genes.js";
 import { pathways } from "../data/pathways.js";
 import { curatedQuestions } from "../data/curatedQuestions.js";
-import { cellTypes, interTissueScenarios, organelleFailureScenarios, organelles, organelleById, reporters, traffickingRoutes } from "../data/spatialAtlas.js";
+import { cellTypes, interTissueScenarios, organelleFailureScenarios, organelles, organelleById, reporters, traffickingRoutes } from "../data/spatialAtlas.js?v=20260827-5";
 
 export const categoryLabels = {
   geneFunction: "Gene → function",
@@ -77,6 +77,117 @@ function takeDistinct(items, count, key = (item) => item, excluded = new Set()) 
     if (result.length === count) break;
   }
   return result;
+}
+
+function answerText(question) {
+  const answer = question.correct;
+  if (Array.isArray(answer)) return answer.join(question.type === "ordering" ? " → " : "; ");
+  return String(answer || "the supported answer");
+}
+
+function firstSentences(text, count = 2) {
+  return String(text || "").match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.slice(0, count).join(" ").trim() || "";
+}
+
+function plainify(text) {
+  return String(text || "")
+    .replaceAll("selective nucleocytoplasmic transport", "controlled movement between the nucleus and the rest of the cell")
+    .replaceAll("encodes", "contains the instructions for making")
+    .replaceAll("curated", "well-supported")
+    .replaceAll("spatial association", "known location")
+    .replaceAll("spatial context", "known location")
+    .replaceAll("subcellular", "inside-the-cell")
+    .replaceAll("nucleocytoplasmic", "between the nucleus and the rest of the cell")
+    .replaceAll("Connected compartments include", "It connects with")
+    .replaceAll("nuclear envelope", "the membrane around the nucleus")
+    .replaceAll("cytosol", "the fluid inside the cell")
+    .replaceAll("macromolecules", "large molecules such as proteins and RNA")
+    .replaceAll("transcriptional output", "change in gene activity")
+    .replaceAll("transcriptionally activates", "helps turn on")
+    .replaceAll("transcription", "turning genes on or off")
+    .replaceAll("phosphorylates and activates", "adds a phosphate tag that switches on")
+    .replaceAll("phosphorylates and inhibits", "adds a phosphate tag that blocks")
+    .replaceAll("phosphorylates", "adds a phosphate tag to")
+    .replaceAll("cytosolic", "in the fluid inside the cell")
+    .replaceAll("luminal hydrolases", "digestive enzymes inside the compartment")
+    .replaceAll("proteolysis", "protein breakdown")
+    .replaceAll("ubiquitinated substrates", "proteins tagged with ubiquitin")
+    .replaceAll("cell autonomous", "caused by the gene acting inside that same cell")
+    .replaceAll("allele strength", "how strongly the mutation changes the gene")
+    .replaceAll("orthogonal strategy", "different kind of test")
+    .replaceAll("fate specification", "deciding what kind of cell each cell becomes")
+    .replaceAll("carry out", "help with")
+    .replaceAll("Specialized structures include", "Important cell features include");
+}
+
+function sentenceCase(text) {
+  return text ? `${text[0].toUpperCase()}${text.slice(1)}` : "";
+}
+
+const conceptDefinitions = [
+  { pattern: /\bLIN-3\/EGF\b|anchor[- ]cell EGF/i, text: "The anchor cell is a nearby organizer cell. It releases LIN-3, an EGF-like growth message, to neighboring cells." },
+  { pattern: /\bvulval precursor|\bvulva\b/i, text: "The vulva is the worm's egg-laying opening; vulval precursor cells are the immature cells that build it." },
+  { pattern: /\bbasolateral\b/i, text: "Basolateral means the side and bottom surfaces of a cell." },
+  { pattern: /\bligand\b/i, text: "A ligand is a signal molecule that binds to a receiving protein called a receptor." },
+  { pattern: /\breceptor\b/i, text: "A receptor is a protein that receives a signal and starts a response in the cell." },
+  { pattern: /\btranscription factor\b/i, text: "A transcription factor is a protein that helps turn particular genes on or off." },
+  { pattern: /\bphosphorylat/i, text: "Phosphorylation means adding a small chemical tag that can change a protein's activity." },
+  { pattern: /\breporter\b|::GFP|p::GFP/i, text: "A reporter is a visible experimental signal used as an indirect readout; it does not measure every part of the process." },
+  { pattern: /\bepistasis\b/i, text: "Epistasis uses combinations of gene changes to work out which step acts earlier or later in a pathway." },
+  { pattern: /\bnuclear pore\b/i, text: "A nuclear pore is a gated opening in the membrane that surrounds the nucleus." },
+  { pattern: /\bautophagosome\b/i, text: "An autophagosome is a temporary double-membrane sac that carries cell material to the lysosome for recycling." },
+  { pattern: /\blysosome\b/i, text: "A lysosome is an acidic recycling compartment that breaks down cell material." },
+  { pattern: /\bendosome\b/i, text: "An endosome is a sorting compartment for material brought in from the cell surface." }
+];
+
+export function buildPlainExplanation(question) {
+  if (question.plainExplanation) return question.plainExplanation;
+  const answer = answerText(question);
+  const detail = sentenceCase(plainify(firstSentences(question.explanation, question.category === "organelleFunction" ? 1 : 2)));
+  let explanation;
+
+  switch (question.category) {
+    case "geneFunction":
+    case "functionGene":
+      explanation = `The supported answer is ${answer}. ${detail}`;
+      break;
+    case "geneOrganelle":
+      explanation = `The supported cell location or locations are ${answer}. A cell compartment is a part of the cell with a particular job. ${detail}`;
+      break;
+    case "geneTissue":
+      explanation = `The supported cells or tissues are ${answer}. This means the gene has been observed or shown to matter there; it does not mean every action of the gene happens only there. ${detail}`;
+      break;
+    case "organelleFunction":
+    case "anatomy":
+    case "interTissue":
+      explanation = `The answer is ${answer}. ${detail}`;
+      break;
+    case "localization":
+      explanation = `The answer is ${answer}. Localization simply means where a protein is found inside a cell. Moving to a different place can change what that protein is able to do. ${detail}`;
+      break;
+    case "trafficking":
+    case "ordering":
+      explanation = `The correct order is ${answer}. This follows the route the material or signal takes from one step to the next. ${detail}`;
+      break;
+    case "experiment":
+      explanation = `The answer is ${answer}. ${detail}`;
+      break;
+    case "topology":
+      explanation = `The modeled relationship is ${answer}. In a pathway, “activates” means helps switch on, while “inhibits” means blocks or reduces. ${detail}`;
+      break;
+    case "perturbation":
+      explanation = `The best local prediction is ${answer}. “Local” means the effect expected for this part of the pathway; other pathways or tissues can change the final whole-animal result. ${detail}`;
+      break;
+    case "epistasis":
+      explanation = `The best prediction is ${answer}. Epistasis compares combined gene changes to work out which step acts earlier or later. ${detail}`;
+      break;
+    default:
+      explanation = `The supported answer is ${answer}. ${detail}`;
+  }
+
+  const searchable = `${question.prompt || ""} ${question.explanation || ""} ${answer}`;
+  const definitions = conceptDefinitions.filter((entry) => entry.pattern.test(searchable) && !explanation.includes(entry.text)).slice(0, 2).map((entry) => entry.text);
+  return `${explanation} ${definitions.join(" ")}`.replace(/\s+/g, " ").trim();
 }
 
 function generateGeneQuestions(seed) {
@@ -213,8 +324,8 @@ function generateAtlasQuestions(seed) {
   const questions = [];
 
   for (const organelle of organelles) {
-    const functionAnswer = organelle.functions[0];
-    const functionDistractors = takeDistinct(shuffle(organelles.filter((candidate) => candidate.id !== organelle.id).flatMap((candidate) => candidate.functions), rng), 4);
+    const functionAnswer = plainify(organelle.functions[0]);
+    const functionDistractors = takeDistinct(shuffle(organelles.filter((candidate) => candidate.id !== organelle.id).flatMap((candidate) => candidate.functions).map(plainify), rng), 4);
     questions.push({
       id: `organelle-function:${organelle.id}`,
       type: "single", category: "organelleFunction", domain: "cellBiology", pathway: "cellAtlas", difficulty: 2,
@@ -227,7 +338,7 @@ function generateAtlasQuestions(seed) {
     questions.push({
       id: `function-organelle:${organelle.id}`,
       type: "single", category: "organelleFunction", domain: "cellBiology", pathway: "cellAtlas", difficulty: 2,
-      prompt: `Where does ${process} primarily occur?`,
+      prompt: `Where does ${plainify(process)} primarily occur?`,
       options: shuffle([organelle.name, ...randomNames(organelles, organelle.name, 5, rng)], rng), correct: organelle.name,
       explanation: `${process} is a defining function of the ${organelle.name}. Connected compartments include ${organelle.connectedCompartments.map((value) => value.replaceAll("_", " ")).join(", ") || "none assigned"}.`, genes: organelle.keyGenes, referenceIds: organelle.referenceIds
     });
@@ -252,7 +363,7 @@ function generateAtlasQuestions(seed) {
       id: `cell-function:${cellType.id}`,
       type: "single", category: "anatomy", domain: "anatomy", pathway: "cellAtlas", difficulty: 2,
       prompt: `Which function is most directly associated with ${cellType.name}?`, options: shuffle([functionAnswer, ...functionDistractors], rng), correct: functionAnswer,
-      explanation: `${cellType.name} carry out ${cellType.majorFunctions.join(", ")}. Specialized structures include ${cellType.specializedStructures.join(", ")}.`, genes: cellType.representativeGenes, referenceIds: cellType.referenceIds
+      explanation: `${cellType.name} carry out ${cellType.majorFunctions.join(", ")}. Specialized structures include ${cellType.specializedStructures.join(", ")}.`, plainExplanation: cellType.plainExplanation, genes: cellType.representativeGenes, referenceIds: cellType.referenceIds
     });
     const correctGenes = cellType.representativeGenes.filter((name) => geneNames.has(name)).slice(0, 4);
     if (correctGenes.length >= 2) {
@@ -372,7 +483,10 @@ export function buildQuestionPool(seed = "wormpath") {
   const atlas = generateAtlasQuestions(seed).map((question) => prepareCuratedQuestion(question, seed));
   const pathwayGenerated = generatePathwayQuestions(seed).map((question) => prepareCuratedQuestion(question, seed));
   const curated = curatedQuestions.map((question) => prepareCuratedQuestion(question, seed));
-  const pool = [...generated, ...atlas, ...pathwayGenerated, ...curated].map((question) => ({ ...question, domain: question.domain || domainForCategory(question.category) }));
+  const pool = [...generated, ...atlas, ...pathwayGenerated, ...curated].map((question) => {
+    const prepared = { ...question, domain: question.domain || domainForCategory(question.category) };
+    return { ...prepared, plainExplanation: buildPlainExplanation(prepared) };
+  });
   const ids = new Set(pool.map((question) => question.id));
   if (ids.size !== pool.length) throw new Error("Question pool contains duplicate IDs.");
   return pool;

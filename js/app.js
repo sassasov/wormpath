@@ -1,6 +1,6 @@
 import { pathways, pathwayDiagrams, references } from "../data/pathways.js";
 import { featuredLearningPathways, learningCollections, learningPortals } from "../data/learning.js";
-import { buildQuestionPool, categoryLabels, getPathwayName, selectNextQuestion } from "./questions.js";
+import { buildQuestionPool, categoryLabels, getPathwayName, selectNextQuestion } from "./questions.js?v=20260827-5";
 import { isFullyCorrect, levelForAbility, overallAbilityScore, scoreAnswer, summarizeResponses, updateAbility } from "./scoring.js";
 
 const STORAGE_KEY = "wormpath:assessment:v2";
@@ -330,9 +330,11 @@ function renderLockedFeedback(question) {
   const pathwayDiagram = question.type === "ordering" || question.category === "topology" ? diagramMarkup(question.pathway) : "";
   const finalQuestion = state.responses.length >= state.total;
   elements.feedback.innerHTML = `
-    <p class="feedback-title ${correct ? "" : "incorrect"}">${correct ? "Mechanism resolved" : response.score > 0 ? `Partially resolved · ${Math.round(response.score * 100)}% credit` : "Not this mechanism"}</p>
+    <p class="feedback-title ${correct ? "" : "incorrect"}">${correct ? "Correct" : response.score > 0 ? `Partly correct · ${Math.round(response.score * 100)}% credit` : "Not quite"}</p>
     ${correct ? "" : `<p><strong>Correct answer:</strong> ${escapeHtml(correctAnswerText(question))}</p>`}
-    <p>${escapeHtml(question.explanation)}</p>
+    <p class="feedback-kicker">Why this answer works</p>
+    <p class="feedback-explanation">${escapeHtml(question.plainExplanation || question.explanation)}</p>
+    <details class="advanced-explanation"><summary>Show more biological detail</summary><p>${escapeHtml(question.explanation)}</p></details>
     ${pathwayDiagram}
     <button id="next-question" class="primary-button">${finalQuestion ? "Reveal my assessment" : "Next question"} <span aria-hidden="true">→</span></button>`;
   elements.feedback.classList.remove("hidden");
@@ -461,7 +463,8 @@ function renderReview() {
         <div><small>Your answer</small><p>${escapeHtml(playerAnswerText(response))}</p></div>
         <div><small>Correct answer</small><p>${escapeHtml(correctAnswerText(question))}</p></div>
       </div>
-      <p class="review-explanation">${escapeHtml(question.explanation)}</p>
+      <p class="review-explanation"><strong>Plain-language explanation:</strong> ${escapeHtml(question.plainExplanation || question.explanation)}</p>
+      <details class="advanced-explanation"><summary>Show more biological detail</summary><p>${escapeHtml(question.explanation)}</p></details>
       <p class="review-explanation"><strong>Relevant genes:</strong> ${question.genes.map((gene) => `<i>${escapeHtml(gene)}</i>`).join(", ")}</p>
     </article>`;
   }).join("");

@@ -115,6 +115,11 @@ button { color: inherit; }
 .feedback-title { margin: 0 0 .45rem; color: var(--moss-strong); font-weight: 700; }
 .feedback-title.incorrect { color: var(--coral); }
 .feedback-panel p { color: var(--muted); line-height: 1.6; }
+.feedback-panel .feedback-kicker { margin: 1rem 0 .35rem; color: var(--moss); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .11em; }
+.feedback-panel .feedback-explanation { margin-top: 0; padding: .9rem 1rem; border-left: 3px solid var(--moss); border-radius: 0 10px 10px 0; background: rgba(185, 214, 106, .06); color: var(--ink); }
+.advanced-explanation { margin: .8rem 0 1rem; padding: .75rem .9rem; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); }
+.advanced-explanation summary { color: var(--mint); font-size: .78rem; font-weight: 700; cursor: pointer; }
+.advanced-explanation p { margin: .75rem 0 0; }
 .feedback-panel .primary-button { margin-bottom: 0; }
 
 .pathway-diagram { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: rgba(3, 13, 9, .3); }

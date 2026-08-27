@@ -55,6 +55,8 @@ Core records live in [`data/genes.js`](data/genes.js); the expanded module annot
 
 Every gene has a long-form description assembled from its molecular role, processes, pathways, compartments, tissues, and localization state. Function-to-gene questions use a separate blinded description, and automated tests ensure the answer gene name never appears in the prompt.
 
+After an answer is locked, WormPath shows a plain-language explanation first and defines common technical terms in context. The original detailed explanation remains available under **Show more biological detail**. Tests ensure every question has this simpler teaching layer, including explicit definitions for the anchor-cell EGF example.
+
 ## Learning library
 
 The in-app learning library provides:
