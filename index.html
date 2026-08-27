@@ -21,7 +21,10 @@
         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 13c6-8 19-6 20 2 1 7-8 6-8 12 0 4 5 5 10 2"/><circle cx="30" cy="29" r="2"/></svg>
         <span>WormPath</span>
       </a>
-      <span class="header-note">A molecular reasoning field test</span>
+      <div class="header-actions">
+        <span class="header-note">A molecular reasoning field test</span>
+        <button id="learn-button" class="header-button">Learning library</button>
+      </div>
     </header>
 
     <main id="main">
@@ -31,7 +34,7 @@
           <h1 id="landing-title">How well do you really know <em>molecular and cell biology?</em></h1>
           <p class="hero-lede">Identify genes, reconstruct mechanisms, predict perturbations, and solve <i>C. elegans</i> pathways. Your final score estimates your biological knowledge level.</p>
           <div class="assay-strip" aria-label="Assessment topics">
-            <span>Genetics</span><span>Signaling</span><span>Stress biology</span><span>Experimental logic</span>
+            <span>Genetics</span><span>Signaling</span><span>Organelles</span><span>Cell atlas</span><span>Experimental logic</span>
           </div>
         </div>
 
@@ -39,6 +42,16 @@
           <div class="panel-heading">
             <p class="kicker">Choose your assay</p>
             <p>Difficulty adapts quietly as you reason.</p>
+          </div>
+          <div class="focus-options" role="radiogroup" aria-label="Assessment focus">
+            <label class="focus-card selected">
+              <input type="radio" name="focus" value="mixed" checked>
+              <span><strong>Integrated biology</strong><small>genes, mechanisms, organelles &amp; tissues</small></span>
+            </label>
+            <label class="focus-card">
+              <input type="radio" name="focus" value="cellAtlas">
+              <span><strong>Cell Atlas focus</strong><small>localization, trafficking &amp; anatomy</small></span>
+            </label>
           </div>
           <div class="length-options" role="radiogroup" aria-label="Assessment length">
             <label class="length-card selected">
@@ -101,6 +114,18 @@
           <button id="back-results" class="secondary-button">Back to results</button>
         </div>
         <div id="review-list" class="review-list"></div>
+      </section>
+
+      <section id="learning-screen" class="screen learning-screen hidden" aria-labelledby="learning-title">
+        <div class="learning-header">
+          <div>
+            <p class="eyebrow compact"><span></span>Explore before you test</p>
+            <h1 id="learning-title">Learning library</h1>
+            <p>Authoritative reading, spatial biology guides, and visual pathway maps built from the same curated model used by the assessment.</p>
+          </div>
+          <button id="back-learning" class="secondary-button">Back to assessment</button>
+        </div>
+        <div id="learning-content"></div>
       </section>
     </main>
 

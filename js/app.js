@@ -1,14 +1,16 @@
-import { pathways, pathwayDiagrams } from "../data/pathways.js";
+import { pathways, pathwayDiagrams, references } from "../data/pathways.js";
+import { featuredLearningPathways, learningCollections, learningPortals } from "../data/learning.js";
 import { buildQuestionPool, categoryLabels, getPathwayName, selectNextQuestion } from "./questions.js";
 import { isFullyCorrect, levelForAbility, overallAbilityScore, scoreAnswer, summarizeResponses, updateAbility } from "./scoring.js";
 
-const STORAGE_KEY = "wormpath:assessment:v1";
+const STORAGE_KEY = "wormpath:assessment:v2";
 
 const elements = {
   landing: document.querySelector("#landing-screen"),
   assessment: document.querySelector("#assessment-screen"),
   results: document.querySelector("#results-screen"),
   review: document.querySelector("#review-screen"),
+  learning: document.querySelector("#learning-screen"),
   startButton: document.querySelector("#start-button"),
   quitButton: document.querySelector("#quit-button"),
   position: document.querySelector("#question-position"),
@@ -27,7 +29,10 @@ const elements = {
   feedback: document.querySelector("#feedback-panel"),
   resultsContent: document.querySelector("#results-content"),
   reviewList: document.querySelector("#review-list"),
-  backResults: document.querySelector("#back-results")
+  backResults: document.querySelector("#back-results"),
+  learnButton: document.querySelector("#learn-button"),
+  backLearning: document.querySelector("#back-learning"),
+  learningContent: document.querySelector("#learning-content")
 };
 
 let state = loadState();
@@ -45,7 +50,7 @@ function escapeHtml(value) {
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved || saved.version !== 1) return null;
+    if (!saved || saved.version !== 2) return null;
     return saved;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
@@ -57,9 +62,9 @@ function saveState() {
   if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function makeState(total, forcedIds = null, startingAbility = 2) {
+function makeState(total, forcedIds = null, startingAbility = 2, focus = "mixed") {
   return {
-    version: 1,
+    version: 2,
     seed: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
     total,
     ability: startingAbility,
@@ -71,12 +76,13 @@ function makeState(total, forcedIds = null, startingAbility = 2) {
     locked: false,
     paused: false,
     complete: false,
+    focus,
     forcedIds
   };
 }
 
 function showScreen(name) {
-  for (const [key, element] of Object.entries({ landing: elements.landing, assessment: elements.assessment, results: elements.results, review: elements.review })) {
+  for (const [key, element] of Object.entries({ landing: elements.landing, assessment: elements.assessment, results: elements.results, review: elements.review, learning: elements.learning })) {
     element.classList.toggle("hidden", key !== name);
   }
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -86,11 +92,16 @@ function selectedLength() {
   return Number(document.querySelector('input[name="length"]:checked')?.value || 20);
 }
 
+function selectedFocus() {
+  return document.querySelector('input[name="focus"]:checked')?.value || "mixed";
+}
+
 function updateLengthCards() {
   document.querySelectorAll(".length-card").forEach((card) => {
     const input = card.querySelector("input");
     card.classList.toggle("selected", input.checked);
   });
+  document.querySelectorAll(".focus-card").forEach((card) => card.classList.toggle("selected", card.querySelector("input").checked));
   const canContinue = state && !state.complete && state.paused && state.total === selectedLength();
   elements.startButton.innerHTML = canContinue ? `Continue assessment <span aria-hidden="true">→</span>` : `Start assessment <span aria-hidden="true">→</span>`;
 }
@@ -116,7 +127,7 @@ function startAssessment() {
   const total = selectedLength();
   const resume = state && !state.complete && state.paused && state.total === total;
   if (!resume) {
-    state = makeState(total);
+    state = makeState(total, null, 2, selectedFocus());
     pool = buildQuestionPool(state.seed);
   }
   state.paused = false;
@@ -266,6 +277,7 @@ function submitAnswer(event) {
   state.responses.push({
     questionId: question.id,
     category: question.category,
+    domain: question.domain,
     pathway: question.pathway,
     difficulty: question.difficulty,
     answer,
@@ -347,6 +359,44 @@ function metricMarkup(metrics, labeler) {
   return `<div class="metric-list">${metrics.map((metric) => `<div class="metric-row"><span>${escapeHtml(labeler(metric.id))}</span><div class="metric-track"><i style="width:${metric.percent}%"></i></div><b>${metric.percent}%</b></div>`).join("")}</div>`;
 }
 
+function learningDiagram(pathwayId) {
+  const pathway = pathways[pathwayId];
+  const nodes = (pathwayDiagrams[pathwayId] || pathway?.nodes?.map((label) => ({ label, relation: "activates" })) || []).slice(0, 7);
+  if (!nodes.length) return "";
+  const nodeWidth = 132;
+  const gap = 42;
+  const width = nodes.length * nodeWidth + (nodes.length - 1) * gap + 32;
+  const svgNodes = nodes.map((node, index) => {
+    const x = 16 + index * (nodeWidth + gap);
+    const label = node.label.length > 22 ? `${node.label.slice(0, 20)}…` : node.label;
+    const arrow = index < nodes.length - 1
+      ? `<text x="${x + nodeWidth + gap / 2}" y="50" text-anchor="middle" class="map-arrow ${node.relation === "inhibits" ? "inhibit" : ""}">${node.relation === "inhibits" ? "⊣" : "→"}</text>`
+      : "";
+    return `<g><rect x="${x}" y="26" width="${nodeWidth}" height="48" rx="10"></rect><text x="${x + nodeWidth / 2}" y="54" text-anchor="middle">${escapeHtml(label)}</text>${arrow}</g>`;
+  }).join("");
+  return `<div class="learning-map-scroll"><svg class="learning-map" viewBox="0 0 ${width} 100" role="img" aria-label="${escapeHtml(pathway.name)} pathway component map"><title>${escapeHtml(pathway.name)} pathway component map</title>${svgNodes}</svg></div>`;
+}
+
+function renderLearning() {
+  const portalMarkup = learningPortals.map((portal) => `<a class="learning-resource" href="${portal.url}" target="_blank" rel="noopener noreferrer"><small>${escapeHtml(portal.kind)}</small><strong>${escapeHtml(portal.name)}</strong><span>${escapeHtml(portal.description)}</span><b>Open resource ↗</b></a>`).join("");
+  const collectionMarkup = learningCollections.map((collection) => `<article class="learning-collection"><h3>${escapeHtml(collection.title)}</h3><p>${escapeHtml(collection.description)}</p><div>${collection.pathwayIds.filter((id) => pathways[id]).map((id) => `<a href="#learn-map-${id}">${escapeHtml(pathways[id].shortName)}</a>`).join("")}</div></article>`).join("");
+  const mapMarkup = featuredLearningPathways.filter((id) => pathways[id]).map((id) => {
+    const pathway = pathways[id];
+    const reference = references[pathway.reference];
+    return `<article id="learn-map-${id}" class="learning-pathway-card">
+      <div class="learning-pathway-heading"><div><small>Visual pathway map</small><h3>${escapeHtml(pathway.name)}</h3></div>${reference ? `<a href="${reference.url}" target="_blank" rel="noopener noreferrer">Read the article ↗</a>` : ""}</div>
+      <p>${escapeHtml(pathway.description)}</p>
+      ${learningDiagram(id)}
+      <div class="learning-detail"><span><b>Outputs</b>${escapeHtml((pathway.outputs || []).join(" · ") || "Context-dependent outputs")}</span><span><b>Common trap</b>${escapeHtml(pathway.commonMisconceptions?.[0] || "Treat the diagram as a model for a defined output, not the whole biological network.")}</span></div>
+    </article>`;
+  }).join("");
+  elements.learningContent.innerHTML = `
+    <section class="learning-section"><div class="section-heading"><p>Trusted starting points</p><h2>Articles, databases, and anatomy</h2></div><div class="learning-resources">${portalMarkup}</div></section>
+    <section class="learning-section"><div class="section-heading"><p>Guided routes</p><h2>Learn by biological problem</h2></div><div class="learning-collections">${collectionMarkup}</div></section>
+    <section class="learning-section"><div class="section-heading"><p>Component pictures</p><h2>Visual pathway maps</h2></div><div class="learning-pathways">${mapMarkup}</div></section>`;
+  showScreen("learning");
+}
+
 function renderResults() {
   if (!state) return;
   state.complete = true;
@@ -356,6 +406,7 @@ function renderResults() {
   const level = levelForAbility(state.ability);
   const overall = overallAbilityScore(state.ability);
   const categoryMetrics = summarizeResponses(state.responses, "category");
+  const domainMetrics = summarizeResponses(state.responses, "domain");
   const pathwayMinimum = state.total >= 50 ? 3 : 2;
   const pathwayMetrics = summarizeResponses(state.responses, "pathway", pathwayMinimum);
   const strongest = pathwayMetrics.slice(0, 3);
@@ -373,6 +424,7 @@ function renderResults() {
       <div class="ability-orbit"><div class="ability-score"><strong>${overall}</strong><span>ability score / 100</span></div></div>
     </div>
     <div class="result-grid">
+      <section class="result-panel full"><h2>Knowledge domains</h2>${metricMarkup(domainMetrics, (id) => ({ molecular: "Molecular knowledge", cellBiology: "Cell biology", anatomy: "C. elegans anatomy" })[id] || id)}</section>
       <section class="result-panel full"><h2>Reasoning profile</h2>${metricMarkup(categoryMetrics, (id) => categoryLabels[id] || id)}</section>
       <section class="result-panel"><h2>Pathway evidence</h2>${metricMarkup(pathwayMetrics, (id) => pathways[id]?.shortName || id)}</section>
       <section class="result-panel">
@@ -417,8 +469,9 @@ function renderReview() {
 
 function retryMistakes() {
   const oldAbility = state.ability;
+  const focus = state.focus || "mixed";
   const forcedIds = state.responses.filter((response) => !isFullyCorrect(response.score)).map((response) => response.questionId);
-  state = makeState(forcedIds.length, forcedIds, oldAbility);
+  state = makeState(forcedIds.length, forcedIds, oldAbility, focus);
   pool = buildQuestionPool(state.seed);
   saveState();
   renderAssessment();
@@ -429,6 +482,7 @@ function resetToLanding() {
   state = null;
   pool = [];
   document.querySelector('input[name="length"][value="20"]').checked = true;
+  document.querySelector('input[name="focus"][value="mixed"]').checked = true;
   updateLengthCards();
   showScreen("landing");
 }
@@ -445,6 +499,18 @@ elements.quitButton.addEventListener("click", () => {
 });
 elements.backResults.addEventListener("click", renderResults);
 document.querySelectorAll('input[name="length"]').forEach((input) => input.addEventListener("change", updateLengthCards));
+document.querySelectorAll('input[name="focus"]').forEach((input) => input.addEventListener("change", updateLengthCards));
+elements.learnButton.addEventListener("click", () => {
+  if (state && !state.complete) {
+    state.paused = true;
+    saveState();
+  }
+  renderLearning();
+});
+elements.backLearning.addEventListener("click", () => {
+  updateLengthCards();
+  showScreen("landing");
+});
 
 updateLengthCards();
 if (state?.complete) renderResults();

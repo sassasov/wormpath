@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildQuestionPool, selectNextQuestion } from "../js/questions.js";
 import { levelForAbility, scoreAnswer, updateAbility } from "../js/scoring.js";
+import { genes } from "../data/genes.js";
+import { pathways } from "../data/pathways.js";
+import { cellTypes, organelles } from "../data/spatialAtlas.js";
 
 function answerFor(question, pattern) {
   if (pattern === "correct") return Array.isArray(question.correct) ? [...question.correct] : question.correct;
@@ -12,9 +15,9 @@ function answerFor(question, pattern) {
   return null;
 }
 
-function simulate(total, pattern, seed) {
+function simulate(total, pattern, seed, focus = "mixed") {
   const pool = buildQuestionPool(seed);
-  const state = { seed, total, ability: 2, streak: 0, usedIds: [], responses: [], forcedIds: null };
+  const state = { seed, total, focus, ability: 2, streak: 0, usedIds: [], responses: [], forcedIds: null };
   for (let index = 0; index < total; index += 1) {
     const question = selectNextQuestion(pool, state);
     assert.ok(question, `question ${index + 1} should exist`);
@@ -23,7 +26,7 @@ function simulate(total, pattern, seed) {
     const score = scoreAnswer(question, answer);
     state.ability = updateAbility({ ability: state.ability, difficulty: question.difficulty, score, category: question.category, total });
     state.streak = score >= .75 ? Math.max(1, state.streak + 1) : score <= .25 ? Math.min(-1, state.streak - 1) : 0;
-    state.responses.push({ questionId: question.id, category: question.category, pathway: question.pathway, score });
+    state.responses.push({ questionId: question.id, category: question.category, pathway: question.pathway, domain: question.domain, score });
     state.usedIds.push(question.id);
   }
   return state;
@@ -31,10 +34,31 @@ function simulate(total, pattern, seed) {
 
 test("question pool is large, varied, and uniquely identified", () => {
   const pool = buildQuestionPool("pool-test");
-  assert.ok(pool.length >= 200, `expected at least 200 questions, got ${pool.length}`);
+  assert.ok(pool.length >= 1500, `expected at least 1500 questions, got ${pool.length}`);
   assert.equal(new Set(pool.map((question) => question.id)).size, pool.length);
-  assert.ok(new Set(pool.map((question) => question.pathway)).size >= 15);
-  assert.ok(new Set(pool.map((question) => question.category)).size >= 7);
+  assert.ok(new Set(pool.map((question) => question.pathway)).size >= 40);
+  assert.ok(new Set(pool.map((question) => question.category)).size >= 12);
+  assert.deepEqual([...new Set(pool.map((question) => question.domain))].sort(), ["anatomy", "cellBiology", "molecular"]);
+  assert.ok(pool.filter((question) => question.category === "experiment").length >= 75);
+  assert.ok(pool.filter((question) => question.category === "epistasis").length >= 50);
+});
+
+test("biology database meets the expanded scale and spatial model", () => {
+  assert.ok(genes.length >= 250 && genes.length <= 400, `expected 250–400 genes, got ${genes.length}`);
+  assert.ok(Object.keys(pathways).length >= 40);
+  assert.ok(organelles.length >= 35);
+  assert.ok(cellTypes.length >= 20);
+  assert.ok(genes.filter((record) => record.pathways.length > 1).length >= 25);
+  assert.ok(genes.filter((record) => record.organelles.length).length >= 250);
+  assert.ok(genes.every((record) => record.description.length >= 300));
+});
+
+test("function-to-gene prompts never reveal the answer name", () => {
+  const questions = buildQuestionPool("blind-prompts").filter((question) => question.category === "functionGene");
+  assert.ok(questions.length >= 250);
+  for (const question of questions) {
+    assert.ok(!question.prompt.toLowerCase().includes(question.correct.toLowerCase()), `${question.id} reveals ${question.correct}`);
+  }
 });
 
 test("20, 50, and 100 question sessions contain no duplicate IDs", () => {
@@ -43,6 +67,12 @@ test("20, 50, and 100 question sessions contain no duplicate IDs", () => {
     assert.equal(session.usedIds.length, total);
     assert.equal(new Set(session.usedIds).size, total);
   }
+});
+
+test("Cell Atlas focus strongly favors spatial biology and anatomy", () => {
+  const session = simulate(50, "correct", "cell-atlas-focus", "cellAtlas");
+  const spatialCount = session.responses.filter((response) => response.domain !== "molecular").length;
+  assert.ok(spatialCount >= 35, `expected at least 35 spatial questions, got ${spatialCount}`);
 });
 
 test("selecting every option cannot win a multiple-selection question", () => {

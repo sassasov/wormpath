@@ -1,4 +1,7 @@
-export const pathways = {
+import { expandedPathwayDiagrams, expandedPathways } from "./expandedPathways.js";
+import { expansionReferences } from "./expandedGenes.js";
+
+const corePathways = {
   iis: { name: "IIS / longevity", shortName: "IIS", description: "Insulin/IGF-like control of development, stress resistance, and longevity", color: "#b9d66a", reference: "wormbook-iis" },
   autophagy: { name: "Autophagy", shortName: "Autophagy", description: "Initiation, membrane expansion, cargo capture, and lysosomal turnover", color: "#83d6ad", reference: "wormbook-autophagy" },
   ras: { name: "Ras / MAPK", shortName: "Ras/MAPK", description: "Receptor-to-ERK signaling and developmental cell-fate control", color: "#82b9c8", reference: "wormbook-ras" },
@@ -16,7 +19,12 @@ export const pathways = {
   immunity: { name: "Innate immunity", shortName: "Innate immunity", description: "Pathogen-responsive MAPK and transcriptional defenses", color: "#e28e87", reference: "wormbook-immunity" }
 };
 
-export const pathwayDiagrams = {
+export const pathways = { ...corePathways };
+for (const [id, pathway] of Object.entries(expandedPathways)) {
+  pathways[id] = { ...pathways[id], ...pathway };
+}
+
+const corePathwayDiagrams = {
   iis: [
     { label: "DAF-2", relation: "activates" }, { label: "AGE-1 / PI3K", relation: "activates" },
     { label: "PDK-1 / AKT", relation: "inhibits" }, { label: "DAF-16 / FOXO" }
@@ -36,7 +44,9 @@ export const pathwayDiagrams = {
   ]
 };
 
-export const references = {
+export const pathwayDiagrams = { ...expandedPathwayDiagrams, ...corePathwayDiagrams };
+
+const coreReferences = {
   "wormbook-iis": { title: "Insulin/insulin-like growth factor signaling in C. elegans", url: "https://www.ncbi.nlm.nih.gov/books/NBK179230/" },
   "wormbook-autophagy": { title: "Autophagy in C. elegans", url: "https://www.ncbi.nlm.nih.gov/books/NBK116074/" },
   "autophagy-development": { title: "Autophagy in C. elegans development", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6204124/" },
@@ -54,3 +64,5 @@ export const references = {
   "wormbook-tgf": { title: "TGF-beta signaling in C. elegans", url: "https://www.ncbi.nlm.nih.gov/books/NBK19692/" },
   "wormbook-immunity": { title: "Signaling in the innate immune response", url: "https://www.ncbi.nlm.nih.gov/books/NBK19673/" }
 };
+
+export const references = { ...coreReferences, ...expansionReferences };

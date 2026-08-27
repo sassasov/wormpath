@@ -1,12 +1,22 @@
+import { expandedGeneConfigs } from "./expandedGenes.js";
+
 const gene = ({
   gene: name,
   pathway,
+  pathways: pathwayList,
   molecularFunction,
   biologicalProcesses,
   difficulty,
   explanation,
   aliases = [],
   localization = [],
+  organelles = [],
+  tissues = [],
+  cellTypes = [],
+  localizationStates = [],
+  reporterContexts = [],
+  expressionScope = "not assigned",
+  recognitionSafe = true,
   upstreamRegulators = [],
   downstreamTargets = [],
   interactionType = "participates in",
@@ -17,20 +27,28 @@ const gene = ({
   gene: name,
   aliases,
   pathway,
+  pathways: pathwayList || [pathway],
   molecularFunction,
   biologicalProcesses,
   cellularLocalization: localization,
+  organelles: organelles.map((organelle) => typeof organelle === "string" ? { organelle, confidence: "established" } : organelle),
+  tissues,
+  cellTypes,
+  localizationStates,
+  reporterContexts,
+  expressionScope,
+  recognitionSafe,
   upstreamRegulators,
   downstreamTargets,
   interactionType,
   phenotypes,
   orthologs,
   difficulty,
-  explanation,
+  explanation: explanation || `${name} contributes to ${biologicalProcesses[0]} as ${molecularFunction}.`,
   references
 });
 
-export const genes = [
+const coreGenes = [
   // Insulin/IGF-like signaling and longevity
   gene({ gene: "daf-2", pathway: "iis", molecularFunction: "the sole insulin/IGF-1-like receptor tyrosine kinase", biologicalProcesses: ["insulin-like signaling", "dauer choice", "longevity"], localization: ["plasma membrane"], downstreamTargets: ["age-1"], interactionType: "activates", phenotypes: ["reduced signaling can extend adult lifespan and promote dauer entry"], orthologs: ["INSR", "IGF1R"], difficulty: 2, explanation: "DAF-2 activates the canonical PI3K–PDK–AKT branch that restrains DAF-16/FOXO.", references: ["wormbook-iis"] }),
   gene({ gene: "age-1", aliases: ["daf-23"], pathway: "iis", molecularFunction: "the catalytic subunit of class I phosphoinositide 3-kinase", biologicalProcesses: ["PIP3 production", "dauer choice", "longevity"], localization: ["cytoplasmic face of membranes"], upstreamRegulators: ["daf-2"], downstreamTargets: ["pdk-1"], interactionType: "activates", orthologs: ["PIK3CA"], difficulty: 2, explanation: "AGE-1 produces the lipid signal that recruits and activates downstream IIS kinases.", references: ["wormbook-iis"] }),
@@ -152,5 +170,117 @@ export const genes = [
   gene({ gene: "zip-2", pathway: "immunity", molecularFunction: "a bZIP transcription factor in a distinct infection-response pathway", biologicalProcesses: ["response to translation-blocking pathogens", "innate immune effector transcription"], localization: ["nucleus when induced"], interactionType: "transcriptionally activates", orthologs: [], difficulty: 4, explanation: "ZIP-2 defines an immune-response branch that should not be collapsed into the NSY-1–SEK-1–PMK-1 cascade.", references: ["wormbook-immunity"] }),
   gene({ gene: "fshr-1", pathway: "immunity", molecularFunction: "a leucine-rich-repeat G-protein-coupled receptor", biologicalProcesses: ["intestinal defense", "stress and homeostatic signaling"], localization: ["plasma membrane"], interactionType: "signals through a partially distinct immune branch", orthologs: ["glycoprotein hormone receptor family"], difficulty: 4, explanation: "FSHR-1 supports intestinal defense through signaling that is not simply a linear extension of PMK-1.", references: ["wormbook-immunity"] })
 ];
+
+const unique = (items) => [...new Set(items.filter(Boolean))];
+
+function mergeOrganelles(left, right) {
+  const byId = new Map();
+  for (const entry of [...left, ...right]) byId.set(entry.organelle, entry);
+  return [...byId.values()];
+}
+
+function mergeGeneRecords(left, right) {
+  if (!left) return right;
+  return {
+    ...right,
+    ...left,
+    aliases: unique([...left.aliases, ...right.aliases]),
+    pathways: unique([...left.pathways, ...right.pathways]),
+    biologicalProcesses: unique([...left.biologicalProcesses, ...right.biologicalProcesses]),
+    cellularLocalization: unique([...left.cellularLocalization, ...right.cellularLocalization]),
+    organelles: mergeOrganelles(left.organelles, right.organelles),
+    tissues: unique([...left.tissues, ...right.tissues]),
+    cellTypes: unique([...left.cellTypes, ...right.cellTypes]),
+    localizationStates: [...left.localizationStates, ...right.localizationStates].filter((state, index, all) => all.findIndex((candidate) => candidate.condition === state.condition && candidate.location === state.location) === index),
+    reporterContexts: unique([...left.reporterContexts, ...right.reporterContexts]),
+    upstreamRegulators: unique([...left.upstreamRegulators, ...right.upstreamRegulators]),
+    downstreamTargets: unique([...left.downstreamTargets, ...right.downstreamTargets]),
+    phenotypes: unique([...left.phenotypes, ...right.phenotypes]),
+    orthologs: unique([...left.orthologs, ...right.orthologs]),
+    references: unique([...left.references, ...right.references]),
+    recognitionSafe: left.recognitionSafe || right.recognitionSafe
+  };
+}
+
+function blindText(record) {
+  let text = `This molecule functions as ${record.molecularFunction}. It contributes to ${record.biologicalProcesses.slice(0, 3).join(", ")}.`;
+  const compartment = record.organelles[0]?.organelle?.replaceAll("_", " ");
+  if (compartment) text += ` Its best-established site of action is associated with the ${compartment}.`;
+  if (record.orthologs.length) text += ` It belongs to the ${record.orthologs.join(" / ")} ortholog or protein family.`;
+  for (const forbidden of [record.gene, ...record.aliases].sort((a, b) => b.length - a.length)) {
+    const escaped = forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    text = text.replace(new RegExp(escaped, "gi"), "this gene product");
+  }
+  return text;
+}
+
+function enrichDescription(record) {
+  const pathwayText = record.pathways.map((value) => value.replaceAll("_", " ")).join(", ");
+  const spatialText = record.organelles.length
+    ? `Its established spatial context includes ${record.organelles.map((entry) => entry.organelle.replaceAll("_", " ")).join(", ")}${record.tissues.length ? ` in ${record.tissues.map((value) => value.replaceAll("_", " ")).join(", ")}` : ""}.`
+    : `Its exact subcellular context depends on the tissue and experimental condition.`;
+  const movementText = record.localizationStates.length
+    ? `Localization is regulated: ${record.localizationStates.map((state) => `${state.condition} → ${state.location}`).join("; ")}.`
+    : `Expression, physical localization, molecular site of action, and organismal phenotype should be interpreted as separate evidence layers.`;
+  return `${record.gene} encodes ${record.molecularFunction}. It participates in ${record.biologicalProcesses.join(", ")} within the ${pathwayText} network${record.pathways.length > 1 ? "s" : ""}. ${spatialText} ${movementText} ${record.explanation}`;
+}
+
+const MAX_CURATED_GENES = 390;
+const coreGeneNames = new Set(coreGenes.map((record) => record.gene));
+const expansionBuckets = new Map();
+for (const config of expandedGeneConfigs) {
+  if (!expansionBuckets.has(config.pathway)) expansionBuckets.set(config.pathway, []);
+  expansionBuckets.get(config.pathway).push(gene(config));
+}
+
+const selectedExpansion = [];
+const selectedGeneNames = new Set(coreGeneNames);
+let round = 0;
+let addedThisRound = true;
+while (addedThisRound) {
+  addedThisRound = false;
+  for (const bucket of expansionBuckets.values()) {
+    const record = bucket[round];
+    if (!record) continue;
+    addedThisRound = true;
+    if (selectedGeneNames.has(record.gene) || selectedGeneNames.size < MAX_CURATED_GENES) {
+      selectedExpansion.push(record);
+      selectedGeneNames.add(record.gene);
+    }
+  }
+  round += 1;
+}
+
+const mergedGenes = new Map();
+for (const record of [...coreGenes, ...selectedExpansion]) {
+  mergedGenes.set(record.gene, mergeGeneRecords(mergedGenes.get(record.gene), record));
+}
+
+const crossPathwayMembership = {
+  "daf-16": ["iis", "oxidativeStress", "heatShock"], "skn-1": ["iis", "oxidativeStress", "immunity", "proteasome"], "hsf-1": ["iis", "heatShock"],
+  "sgk-1": ["iis", "tor"], "hlh-30": ["tor", "autophagy", "lysosome"], "pha-4": ["tor", "cellAtlas"], "let-363": ["tor", "autophagy", "translation"],
+  "rsks-1": ["tor", "translation"], "aak-2": ["tor", "oxidativeStress"], "sqst-1": ["autophagy", "mitophagy", "proteasome"], "lgg-1": ["autophagy", "mitophagy"],
+  "bec-1": ["autophagy", "mitophagy", "endocytosis"], "atg-7": ["autophagy", "mitophagy"], "rab-7": ["lysosome", "endocytosis", "autophagy"],
+  "atfs-1": ["uprmt", "respiration"], "drp-1": ["mitochondrialDynamics", "mitophagy"], "pink-1": ["mitophagy", "mitochondrialDynamics"],
+  "daf-4": ["daf7", "bmp", "tgf"], "glp-1": ["notch", "germlineStemCells"], "lag-2": ["notch", "germlineStemCells"],
+  "pmk-1": ["immunity", "oxidativeStress"], "sek-1": ["immunity", "oxidativeStress"], "ced-10": ["engulfment", "cellAtlas"],
+  "rad-51": ["homologousRecombination", "meiosis", "dna"], "mre-11": ["homologousRecombination", "meiosis"], "brc-1": ["homologousRecombination", "dna"],
+  "lin-35": ["cellcycle", "dream"], "lin-53": ["dream", "chromatin"], "pop-1": ["wnt", "polarity"], "par-4": ["tor", "polarity"],
+  "rme-1": ["endocytosis", "cellAtlas"], "rme-6": ["endocytosis", "cellAtlas"], "rab-3": ["synapticVesicle", "neurotransmission"],
+  "unc-2": ["synapticVesicle", "neurotransmission"], "daf-19": ["cilium", "cellAtlas"], "tax-4": ["chemosensation", "cilium"],
+  "mec-4": ["mechanosensation", "cellAtlas"], "nhr-49": ["lipidMetabolism", "peroxisome"], "ctl-2": ["oxidativeStress", "peroxisome"],
+  "pat-3": ["basementMembrane", "muscle"], "pkc-3": ["polarity", "epithelialPolarity"], "pie-1": ["polarity", "cellAtlas", "chromatin"],
+  "lin-29": ["heterochronic", "cellAtlas"], "let-23": ["ras", "cellAtlas"], "lin-12": ["notch", "cellAtlas"]
+};
+for (const [name, pathwayIds] of Object.entries(crossPathwayMembership)) {
+  const record = mergedGenes.get(name);
+  if (record) record.pathways = unique([...record.pathways, ...pathwayIds]);
+}
+
+export const genes = [...mergedGenes.values()].map((record) => ({
+  ...record,
+  recognitionPrompt: blindText(record),
+  description: enrichDescription(record)
+}));
 
 export const geneByName = new Map(genes.map((record) => [record.gene, record]));

@@ -1,6 +1,6 @@
 # WormPath
 
-WormPath is an adaptive, static assessment game for *Caenorhabditis elegans* molecular and cell biology. It mixes gene/function recognition with pathway ordering, topology, perturbation, genetic epistasis, and experimental interpretation.
+WormPath is an adaptive, static assessment and learning game for *Caenorhabditis elegans* molecular and cell biology. It connects genes to molecular functions, pathways, organelles, regulated localization, cell types, tissues, perturbations, epistasis, and experimental evidence.
 
 ## Run locally
 
@@ -20,7 +20,7 @@ npm test
 
 ## Assessment and scoring model
 
-Questions carry a hidden difficulty from 1 (School) to 5 (Professor). A session starts at ability 2.0 (BSc). The next-question selector favors items near the current estimate while adding neighboring difficulties and under-sampled question types/pathways. Two strong answers increase the probability of a harder item; repeated weak answers shift that probability downward.
+Questions carry a hidden difficulty from 1 (School) to 5 (Professor). A session starts at ability 2.0 (BSc). The next-question selector favors items near the current estimate while balancing under-sampled question types, pathways, and knowledge domains. **Integrated biology** mixes the complete graph; **Cell Atlas focus** prioritizes organelles, localization, trafficking, tissues, and anatomy.
 
 Ability updates use a compact item-response-style rule:
 
@@ -42,7 +42,28 @@ Final labels are based on the adaptive ability estimate, not raw percentage alon
 
 ## Biology data
 
-Structured gene records live in [`data/genes.js`](data/genes.js), separately from question and UI logic. Each record includes pathway, molecular function, processes, localization, regulatory context, interaction type, phenotypes, orthologs, difficulty, explanation, and reference IDs. Safe recognition questions are generated from those records. Epistasis and experimental-interpretation questions are curated explicitly in [`data/curatedQuestions.js`](data/curatedQuestions.js).
+The current release contains:
+
+- 390 curated genes across 62 biological modules
+- 40 organelle/compartment objects and 24 cell/tissue objects
+- multi-pathway membership for major integrators
+- regulated localization states for factors such as DAF-16, HLH-30, ATFS-1, and HIF-1
+- 2,100+ distinct assessment questions
+- 75+ reporter/experimental-interpretation questions and 50+ epistasis questions
+
+Core records live in [`data/genes.js`](data/genes.js); the expanded module annotations are in [`data/expandedGenes.js`](data/expandedGenes.js). Spatial objects, trafficking routes, reporters, and inter-tissue scenarios are in [`data/spatialAtlas.js`](data/spatialAtlas.js). Pathway objects include nodes, typed edges, outputs, reporters, and common misconceptions in [`data/expandedPathways.js`](data/expandedPathways.js).
+
+Every gene has a long-form description assembled from its molecular role, processes, pathways, compartments, tissues, and localization state. Function-to-gene questions use a separate blinded description, and automated tests ensure the answer gene name never appears in the prompt.
+
+## Learning library
+
+The in-app learning library provides:
+
+- direct links to WormBase, WormAtlas, Alliance of Genome Resources, and WormBook
+- topic-guided reading collections
+- inline visual maps of pathway components and regulatory relationships
+- links from every featured map to its authoritative source article
+- common experimental or conceptual traps for each pathway
 
 Core references include:
 
@@ -56,6 +77,12 @@ Core references include:
 - [TGF-beta signaling](https://www.ncbi.nlm.nih.gov/books/NBK19692/)
 - [Signaling in the innate immune response](https://www.ncbi.nlm.nih.gov/books/NBK19673/)
 - [Mitochondrial unfolded protein response review](https://pmc.ncbi.nlm.nih.gov/articles/PMC3867496/)
+- [C. elegans as a model for membrane traffic](https://www.ncbi.nlm.nih.gov/books/NBK19650/)
+- [The C. elegans intestine](https://www.ncbi.nlm.nih.gov/books/NBK19717/)
+- [The sensory cilia of C. elegans](https://www.ncbi.nlm.nih.gov/books/NBK19729/)
+- [Germline proliferation and its control](https://www.ncbi.nlm.nih.gov/books/NBK19769/)
+- [Epithelial junctions, cytoskeleton, and polarity](https://www.ncbi.nlm.nih.gov/books/NBK19677/)
+- [Development and maintenance of body-wall muscle](https://www.ncbi.nlm.nih.gov/books/NBK426064/)
 
 The content is educational and deliberately distinguishes pathway models from what a particular experiment can establish.
 
