@@ -192,13 +192,13 @@ button { color: inherit; }
 .learning-collection p { min-height: 4.7em; color: var(--muted); font-size: .82rem; line-height: 1.55; }
 .learning-collection div { display: flex; flex-wrap: wrap; gap: .45rem; }
 .learning-collection a { padding: .38rem .55rem; border: 1px solid var(--line); border-radius: 999px; color: var(--mint); font-size: .69rem; text-decoration: none; }
-.learning-pathways { display: grid; gap: 1rem; }
-.learning-pathway-card { scroll-margin-top: 1rem; padding: 1.35rem; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(150deg, rgba(19, 42, 33, .68), rgba(8, 22, 16, .7)); }
+.learning-pathways { display: grid; min-width: 0; gap: 1rem; }
+.learning-pathway-card { min-width: 0; scroll-margin-top: 1rem; padding: 1.35rem; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(150deg, rgba(19, 42, 33, .68), rgba(8, 22, 16, .7)); }
 .learning-pathway-heading { display: flex; justify-content: space-between; gap: 2rem; align-items: end; }
 .learning-pathway-heading h3 { margin: .25rem 0 0; font-family: var(--serif); font-size: 1.8rem; font-weight: 500; }
 .learning-pathway-heading a { color: var(--moss-strong); font-size: .76rem; text-decoration: none; }
 .learning-pathway-card > p { max-width: 790px; color: var(--muted); line-height: 1.6; }
-.learning-map-scroll { overflow-x: auto; margin: 1rem 0; padding: .2rem; border: 1px solid var(--line); border-radius: 13px; background: rgba(2, 13, 8, .4); }
+.learning-map-scroll { width: 100%; max-width: 100%; overflow-x: auto; margin: 1rem 0; padding: .2rem; border: 1px solid var(--line); border-radius: 13px; background: rgba(2, 13, 8, .4); }
 .learning-map { display: block; min-width: 720px; width: 100%; height: 130px; }
 .learning-map rect { fill: #173126; stroke: rgba(185, 214, 106, .36); }
 .learning-map text { fill: var(--ink); font: 600 12px var(--sans); }
