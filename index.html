@@ -9,10 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,500;6..72,600&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260827-6">
+    <link rel="stylesheet" href="styles.css?v=20260828-olympiad">
   </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to assessment</a>
+  <body class="case-edition">
+    <a class="skip-link" href="#app">Skip to assessment</a>
     <div class="ambient ambient-one" aria-hidden="true"></div>
     <div class="ambient ambient-two" aria-hidden="true"></div>
 
@@ -21,113 +21,9 @@
         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 13c6-8 19-6 20 2 1 7-8 6-8 12 0 4 5 5 10 2"/><circle cx="30" cy="29" r="2"/></svg>
         <span>WormPath</span>
       </a>
-      <div class="header-actions">
-        <span class="header-note">A molecular reasoning field test</span>
-        <button id="learn-button" class="header-button">Learning library</button>
-      </div>
+      <div class="header-actions"><span class="header-note">Genetics reveals mechanism</span><button class="header-button" data-nav="learn">Learning library</button></div>
     </header>
-
-    <main id="main">
-      <section id="landing-screen" class="screen landing-screen" aria-labelledby="landing-title">
-        <div class="hero-copy">
-          <p class="eyebrow"><span></span> Adaptive C. elegans assessment</p>
-          <h1 id="landing-title">How well do you really know <em>molecular and cell biology?</em></h1>
-          <p class="hero-lede">Identify genes, reconstruct mechanisms, predict perturbations, and solve <i>C. elegans</i> pathways. Your final score estimates your biological knowledge level.</p>
-          <div class="assay-strip" aria-label="Assessment topics">
-            <span>Genetics</span><span>Signaling</span><span>Organelles</span><span>Cell atlas</span><span>Experimental logic</span>
-          </div>
-        </div>
-
-        <div class="launch-panel">
-          <div class="panel-heading">
-            <p class="kicker">Choose your assay</p>
-            <p>Difficulty adapts quietly as you reason.</p>
-          </div>
-          <div class="focus-options" role="radiogroup" aria-label="Assessment focus">
-            <label class="focus-card selected">
-              <input type="radio" name="focus" value="mixed" checked>
-              <span><strong>Integrated biology</strong><small>genes, mechanisms, organelles &amp; tissues</small></span>
-            </label>
-            <label class="focus-card">
-              <input type="radio" name="focus" value="cellAtlas">
-              <span><strong>Cell Atlas focus</strong><small>localization, trafficking &amp; anatomy</small></span>
-            </label>
-          </div>
-          <div class="length-options" role="radiogroup" aria-label="Assessment length">
-            <label class="length-card selected">
-              <input type="radio" name="length" value="20" checked>
-              <span class="length-number">20</span>
-              <span class="length-copy"><strong>Quick assessment</strong><small>~ basic estimate</small></span>
-              <span class="radio-mark" aria-hidden="true"></span>
-            </label>
-            <label class="length-card">
-              <input type="radio" name="length" value="50">
-              <span class="length-number">50</span>
-              <span class="length-copy"><strong>Standard assessment</strong><small>better level estimate</small></span>
-              <span class="radio-mark" aria-hidden="true"></span>
-            </label>
-            <label class="length-card">
-              <input type="radio" name="length" value="100">
-              <span class="length-number">100</span>
-              <span class="length-copy"><strong>Comprehensive assessment</strong><small>detailed pathway profile</small></span>
-              <span class="radio-mark" aria-hidden="true"></span>
-            </label>
-          </div>
-          <button id="start-button" class="primary-button">Start assessment <span aria-hidden="true">→</span></button>
-          <p class="privacy-note">No account. No timer. Your progress stays in this browser.</p>
-        </div>
-      </section>
-
-      <section id="assessment-screen" class="screen assessment-screen hidden" aria-live="polite">
-        <div class="assessment-topline">
-          <div>
-            <p id="question-position" class="eyebrow compact">Question 1 / 20</p>
-            <p id="category-label" class="category-label">Gene → function</p>
-          </div>
-          <button id="quit-button" class="text-button">Save &amp; exit</button>
-        </div>
-        <div class="progress-track" role="progressbar" aria-label="Assessment progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span id="progress-fill"></span>
-        </div>
-
-        <article id="question-card" class="question-card">
-          <div id="question-pathway" class="pathway-chip"></div>
-          <h2 id="question-prompt"></h2>
-          <p id="question-instruction" class="question-instruction"></p>
-          <div id="question-visual" class="question-visual"></div>
-          <form id="answer-form">
-            <div id="answer-area"></div>
-            <p id="answer-error" class="answer-error" role="alert"></p>
-            <button id="submit-answer" class="primary-button answer-button" type="submit">Lock answer</button>
-          </form>
-          <div id="feedback-panel" class="feedback-panel hidden" tabindex="-1"></div>
-        </article>
-      </section>
-
-      <section id="results-screen" class="screen results-screen hidden" aria-labelledby="results-title">
-        <div id="results-content"></div>
-      </section>
-
-      <section id="review-screen" class="screen review-screen hidden" aria-labelledby="review-title">
-        <div class="review-header">
-          <div><p class="eyebrow compact">Answer review</p><h1 id="review-title">Mechanisms to revisit</h1></div>
-          <button id="back-results" class="secondary-button">Back to results</button>
-        </div>
-        <div id="review-list" class="review-list"></div>
-      </section>
-
-      <section id="learning-screen" class="screen learning-screen hidden" aria-labelledby="learning-title">
-        <div class="learning-header">
-          <div>
-            <p class="eyebrow compact"><span></span>Explore before you test</p>
-            <h1 id="learning-title">Learning library</h1>
-            <p>Authoritative reading, spatial biology guides, and visual pathway maps built from the same curated model used by the assessment.</p>
-          </div>
-          <button id="back-learning" class="secondary-button">Back to assessment</button>
-        </div>
-        <div id="learning-content"></div>
-      </section>
-    </main>
+    <main id="app" tabindex="-1" aria-live="polite"></main>
 
     <footer>
       <span>WormPath</span>
@@ -135,6 +31,6 @@
     </footer>
 
     <noscript>WormPath requires JavaScript to run the adaptive assessment.</noscript>
-    <script type="module" src="js/app.js?v=20260827-6"></script>
+    <script type="module" src="js/casesApp.js?v=20260828-olympiad"></script>
   </body>
 </html>
